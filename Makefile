@@ -15,18 +15,18 @@
 #***************************************************************************************
 
 SIM_TOP    ?= SimTop
-DESIGN_DIR ?= ..
+DESIGN_DIR ?= ../..
 NUM_CORES  ?= 1
 
 BUILD_DIR = $(DESIGN_DIR)/build
-SIM_TOP_V = $(BUILD_DIR)/$(SIM_TOP).v
+SIM_TOP_V = $(BUILD_DIR)/src/sim/$(SIM_TOP).sv
 
-DIFF_SCALA_FILE = $(shell find ./src/main/scala -name '*.scala')
-SCALA_FILE = $(shell find $(DESIGN_DIR)/src/main/scala -name '*.scala')
+# DIFF_SCALA_FILE = $(shell find ./src/main/scala -name '*.scala')
+# SCALA_FILE = $(shell find $(DESIGN_DIR)/src/main/scala -name '*.scala')
 
 # generate SimTop.v
-$(SIM_TOP_V): $(DIFF_SCALA_FILE) $(SCALA_FILE)
-	$(MAKE) -C $(DESIGN_DIR) sim-verilog
+# $(SIM_TOP_V): $(DIFF_SCALA_FILE) $(SCALA_FILE)
+# 	$(MAKE) -C $(DESIGN_DIR) sim-verilog
 
 # co-simulation with DRAMsim3
 ifeq ($(WITH_DRAMSIM3),1)
@@ -43,7 +43,7 @@ TIME_CMD = time -a -o $(TIMELOG)
 REMOTE ?= localhost
 .DEFAULT_GOAL = emu
 
-sim-verilog: $(SIM_TOP_V)
+# sim-verilog: $(SIM_TOP_V)
 
 SIM_CSRC_DIR = $(abspath ./src/test/csrc/common)
 SIM_CXXFILES = $(shell find $(SIM_CSRC_DIR) -name "*.cpp")
@@ -54,13 +54,15 @@ DIFFTEST_CXXFILES = $(shell find $(DIFFTEST_CSRC_DIR) -name "*.cpp")
 PLUGIN_CHEAD_DIR = $(abspath ./src/test/csrc/plugin/include)
 
 SIM_VSRC = $(shell find ./src/test/vsrc/common -name "*.v" -or -name "*.sv")
+SRC = $(shell find $(DESIGN_DIR)/src -name "*.v" -or -name "*.sv" -or -name "*.svh")
 
+SUBDIRS := $(shell find $(DESIGN_DIR)/src -type d)
+INCLUDES := $(addprefix -I, $(SUBDIRS))
+INCLUDE_DIRS = $(INCLUDES)
 include verilator.mk
 include vcs.mk
 
-ifndef NEMU_HOME
-$(error NEMU_HOME is not set)
-endif
+NEMU_HOME := ../NEMU
 REF_SO := $(NEMU_HOME)/build/riscv64-nemu-interpreter-so
 $(REF_SO):
 	$(MAKE) -C $(NEMU_HOME) riscv64-xs-ref_defconfig
