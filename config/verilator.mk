@@ -39,4 +39,4 @@
 # E ?= 0
 
 # default simulation image for `make emu-run`
-IMAGE ?= "../ready-to-run/microbench.bin"
+IMAGE ?= "../NEMU/ready-to-run/microbench.bin"

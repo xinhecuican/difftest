@@ -41,9 +41,9 @@ EMU_CXXFLAGS += -DVERILATOR_4_210
 endif
 
 # Verilator trace support
-EMU_TRACE ?=
+EMU_TRACE ?= 1
 ifeq ($(EMU_TRACE),1)
-VEXTRA_FLAGS += --trace
+VEXTRA_FLAGS += --trace --trace-structs
 endif
 
 # Verilator multi-thread support

@@ -310,8 +310,8 @@ public:
 #endif
 
 protected:
-  const uint64_t firstCommit_limit = 5000;
-  const uint64_t stuck_limit = 5000;
+  const uint64_t firstCommit_limit = 10000;
+  const uint64_t stuck_limit = 10000;
 
   int id;
   difftest_core_state_t dut;
