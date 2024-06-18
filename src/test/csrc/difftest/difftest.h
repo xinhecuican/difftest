@@ -70,13 +70,17 @@ typedef struct {
 } arch_reg_state_t;
 
 typedef struct __attribute__((packed)) {
-  uint64_t this_pc;
+  uint64_t priviledgeMode;
   uint64_t mstatus;
-  uint64_t mcause;
-  uint64_t mepc;
   uint64_t sstatus;
-  uint64_t scause;
+  uint64_t mepc;
   uint64_t sepc;
+  uint64_t mtval;
+  uint64_t stval;
+  uint64_t mtvec;
+  uint64_t stvec;
+  uint64_t mcause;
+  uint64_t scause;
   uint64_t satp;
   uint64_t mip;
   uint64_t mie;
@@ -84,11 +88,7 @@ typedef struct __attribute__((packed)) {
   uint64_t sscratch;
   uint64_t mideleg;
   uint64_t medeleg;
-  uint64_t mtval;
-  uint64_t stval;
-  uint64_t mtvec;
-  uint64_t stvec;
-  uint64_t priviledgeMode;
+  uint64_t this_pc;
 } arch_csr_state_t;
 
 const int DIFFTEST_NR_REG = (sizeof(arch_reg_state_t) + sizeof(arch_csr_state_t)) / sizeof(uint64_t);

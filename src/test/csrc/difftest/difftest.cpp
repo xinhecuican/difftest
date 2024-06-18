@@ -32,12 +32,16 @@ static const char *reg_name[DIFFTEST_NR_REG+1] = {
   "fs0", "fs1", "fa0",  "fa1",  "fa2", "fa3", "fa4",  "fa5",
   "fa6", "fa7", "fs2",  "fs3",  "fs4", "fs5", "fs6",  "fs7",
   "fs8", "fs9", "fs10", "fs11", "ft8", "ft9", "ft10", "ft11",
-  "this_pc",
-  "mstatus", "mcause", "mepc",
-  "sstatus", "scause", "sepc",
+  "mode",
+  "mstatus", "sstatus", 
+  "mepc", "sepc", 
+  "mtval", "stval",
+  "mtvec", "stvec",
+  "mcause", "scause",
   "satp",
-  "mip", "mie", "mscratch", "sscratch", "mideleg", "medeleg",
-  "mtval", "stval", "mtvec", "stvec", "mode",
+  "mip", "mie", 
+  "mscratch", "sscratch", "mideleg", "medeleg",
+  "this_pc"
 };
 
 Difftest **difftest = NULL;
@@ -155,10 +159,23 @@ int Difftest::step() {
   uint64_t nemu_next_pc = ref.csr.this_pc;
   ref.csr.this_pc = nemu_this_pc;
   nemu_this_pc = nemu_next_pc;
+  bool reg_equal = true;
+#ifdef RV32
+  for (int i = 0; i < 32; i++) {
+    if (((dut.regs.gpr[i] & 0xffffffff) != (ref.regs.gpr[i] & 0xffffffff)) ||
+        ((dut.regs.fpr[i] & 0xffffffff) != (ref.regs.fpr[i] & 0xffffffff))) {
+      reg_equal = false;
+      break;
+    }
+  }
+  if (reg_equal && memcmp(dut_regs_ptr+32, ref_regs_ptr+32, (DIFFTEST_NR_REG - 32) * sizeof(uint64_t))) {
+#else
   if (memcmp(dut_regs_ptr, ref_regs_ptr, DIFFTEST_NR_REG * sizeof(uint64_t))) {
+#endif
     display();
     for (int i = 0; i < DIFFTEST_NR_REG; i ++) {
       if (dut_regs_ptr[i] != ref_regs_ptr[i]) {
+        printf("%d\n", i);
         printf("%7s different at pc = 0x%010lx, right= 0x%016lx, wrong = 0x%016lx\n",
             reg_name[i], ref.csr.this_pc, ref_regs_ptr[i], dut_regs_ptr[i]);
       }

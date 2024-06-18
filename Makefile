@@ -62,10 +62,13 @@ INCLUDE_DIRS = $(INCLUDES)
 include verilator.mk
 include vcs.mk
 
-NEMU_HOME := ../NEMU
+export NEMU_HOME = $(shell pwd)/../NEMU
 REF_SO := $(NEMU_HOME)/build/riscv64-nemu-interpreter-so
+
+ref: $(REF_SO)
+
 $(REF_SO):
-	$(MAKE) -C $(NEMU_HOME) riscv64-xs-ref_defconfig
+	$(MAKE) -C $(NEMU_HOME) riscv64-do-ref_defconfig
 	$(MAKE) -C $(NEMU_HOME)
 
 SEED ?= $(shell shuf -i 1-10000 -n 1)
