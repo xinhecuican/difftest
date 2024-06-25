@@ -168,13 +168,23 @@ int Difftest::step() {
       break;
     }
   }
-  if (reg_equal && memcmp(dut_regs_ptr+32, ref_regs_ptr+32, (DIFFTEST_NR_REG - 32) * sizeof(uint64_t))) {
+  if (!reg_equal || memcmp(dut_regs_ptr+64, ref_regs_ptr+64, (DIFFTEST_NR_REG - 64) * sizeof(uint64_t))) {
 #else
   if (memcmp(dut_regs_ptr, ref_regs_ptr, DIFFTEST_NR_REG * sizeof(uint64_t))) {
 #endif
     display();
+    printf("next pc: %010lx\n", nemu_next_pc);
     for (int i = 0; i < DIFFTEST_NR_REG; i ++) {
+#ifdef RV32
+      if(i < 64 && ((dut_regs_ptr[i] & 0xffffffff) != (ref_regs_ptr[i] & 0xffffffff))) {
+        printf("%d\n", i);
+        printf("%7s different at pc = 0x%010lx, right= 0x%08x, wrong = 0x%08x\n",
+            reg_name[i], ref.csr.this_pc, (int)ref_regs_ptr[i], (int)dut_regs_ptr[i]);
+      }
+      else if(i >= 64 && (dut_regs_ptr[i] != ref_regs_ptr[i])) {
+#else
       if (dut_regs_ptr[i] != ref_regs_ptr[i]) {
+#endif
         printf("%d\n", i);
         printf("%7s different at pc = 0x%010lx, right= 0x%016lx, wrong = 0x%016lx\n",
             reg_name[i], ref.csr.this_pc, ref_regs_ptr[i], dut_regs_ptr[i]);
