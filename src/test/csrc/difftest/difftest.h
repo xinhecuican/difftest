@@ -18,7 +18,8 @@
 #define __DIFFTEST_H__
 
 #include "common.h"
-
+#include <map>
+#include <string>
 #include "nemuproxy.h"
 #define DIFF_PROXY NemuProxy
 
@@ -55,6 +56,7 @@ typedef struct {
   uint8_t  valid = 0;
   uint64_t pc;
   uint32_t inst;
+  uint32_t robIdx;
   uint8_t  skip;
   uint8_t  isRVC;
   uint8_t  scFailed;
@@ -180,6 +182,7 @@ typedef struct {
   run_ahead_commit_event_t runahead_commit[DIFFTEST_RUNAHEAD_WIDTH];
   run_ahead_redirect_event_t runahead_redirect;
   run_ahead_memdep_pred_t runahead_memdep_pred[DIFFTEST_RUNAHEAD_WIDTH];
+  std::map <std::string, uint64_t> log_state;
 } difftest_core_state_t;
 
 enum retire_inst_type {
@@ -196,9 +199,11 @@ public:
     retire_group_cnt_queue[retire_group_pointer] = count;
     retire_group_pointer = (retire_group_pointer + 1) % DEBUG_GROUP_TRACE_SIZE;
   };
-  void record_inst(uint64_t pc, uint32_t inst, uint8_t en, uint8_t dest, uint64_t data, bool skip) {
+  void record_inst(uint64_t cycle, uint64_t pc, uint32_t inst, uint32_t robIdx, uint8_t en, uint8_t dest, uint64_t data, bool skip) {
+    retire_inst_cycle_queue[retire_inst_pointer] = cycle;
     retire_inst_pc_queue   [retire_inst_pointer] = pc;
     retire_inst_inst_queue [retire_inst_pointer] = inst;
+    retire_inst_robIdx_queue[retire_inst_pointer] = robIdx;
     retire_inst_wen_queue  [retire_inst_pointer] = en;
     retire_inst_wdst_queue [retire_inst_pointer] = dest;
     retire_inst_wdata_queue[retire_inst_pointer] = data;
@@ -221,8 +226,10 @@ private:
   uint32_t retire_group_cnt_queue[DEBUG_GROUP_TRACE_SIZE] = {0};
 
   int retire_inst_pointer = 0;
+  uint64_t retire_inst_cycle_queue[DEBUG_INST_TRACE_SIZE] = {0};
   uint64_t retire_inst_pc_queue[DEBUG_INST_TRACE_SIZE] = {0};
   uint32_t retire_inst_inst_queue[DEBUG_INST_TRACE_SIZE] = {0};
+  uint32_t retire_inst_robIdx_queue[DEBUG_INST_TRACE_SIZE] = {0};
   uint64_t retire_inst_wen_queue[DEBUG_INST_TRACE_SIZE] = {0};
   uint32_t retire_inst_wdst_queue[DEBUG_INST_TRACE_SIZE] = {0};
   uint64_t retire_inst_wdata_queue[DEBUG_INST_TRACE_SIZE] = {0};
@@ -297,6 +304,12 @@ public:
   inline run_ahead_memdep_pred_t *get_runahead_memdep_pred(uint8_t index) {
     return &(dut.runahead_memdep_pred[index]);
   }
+  inline bool isEnableLog(){
+    return enableLog;
+  }
+  inline void setEnabelLog(bool enable){
+    enableLog = enable;
+  }
   difftest_core_state_t *get_dut() {
     return &dut;
   }
@@ -320,6 +333,7 @@ protected:
   uint64_t *dut_regs_ptr = (uint64_t*)&dut.regs;
 
   bool progress = false;
+  bool enableLog = false;
   uint64_t ticks = 0;
   uint64_t last_commit = 0;
 
@@ -347,6 +361,7 @@ protected:
 extern Difftest **difftest;
 int difftest_init();
 int difftest_step();
+void difftest_log(std::string path);
 int difftest_state();
 int init_nemuproxy();
 

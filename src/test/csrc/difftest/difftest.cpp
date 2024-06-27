@@ -18,6 +18,7 @@
 #include "goldenmem.h"
 #include "ram.h"
 #include "spikedasm.h"
+#include <fstream>
 
 #ifndef FIRST_INST_ADDRESS
 #define FIRST_INST_ADDRESS 0x80000000
@@ -78,6 +79,21 @@ int difftest_step() {
     }
   }
   return 0;
+}
+
+void difftest_log(std::string path) {
+  for(int i = 0; i < NUM_CORES; i++) {
+    std::fstream file;
+    std::string filePath = path + "perf_" + std::to_string(i) + ".log";
+    file.open(filePath.c_str(), std::ios::out | std::ios::trunc);
+    if (file.is_open()) {
+      auto log_state = difftest[i]->get_dut()->log_state;
+      for (auto iter = log_state.begin(); iter != log_state.end(); iter++) {
+        file << iter->first << ": " << iter->second << std::endl;
+      }
+    }
+    file.close();
+  }
 }
 
 Difftest::Difftest(int coreid) : id(coreid) {
@@ -172,6 +188,7 @@ int Difftest::step() {
 #else
   if (memcmp(dut_regs_ptr, ref_regs_ptr, DIFFTEST_NR_REG * sizeof(uint64_t))) {
 #endif
+    enableLog = true;
     display();
     printf("next pc: %010lx\n", nemu_next_pc);
     for (int i = 0; i < DIFFTEST_NR_REG; i ++) {
@@ -224,7 +241,7 @@ void Difftest::do_instr_commit(int i) {
   last_commit = ticks;
 
   // store the writeback info to debug array
-  state->record_inst(dut.commit[i].pc, dut.commit[i].inst, dut.commit[i].wen, dut.commit[i].wdest, dut.commit[i].wdata, dut.commit[i].skip != 0);
+  state->record_inst(dut.trap.cycleCnt, dut.commit[i].pc, dut.commit[i].inst, dut.commit[i].robIdx, dut.commit[i].wen, dut.commit[i].wdest, dut.commit[i].wdata, dut.commit[i].skip != 0);
 
   // sync lr/sc reg status
   if (dut.commit[i].scFailed) {
@@ -575,8 +592,8 @@ void DiffState::display(int coreid) {
   for (int j = 0; j < DEBUG_INST_TRACE_SIZE; j++) {
     switch (retire_inst_type_queue[j]) {
       case RET_NORMAL:
-        printf("commit inst [%02d]: pc %010lx inst %08x wen %x dst %08x data %016lx%s",
-            j, retire_inst_pc_queue[j], retire_inst_inst_queue[j],
+        printf("commit inst [%02d]: cycle: %016ld robIdx: %08x pc %010lx inst %08x wen %x dst %08x data %016lx%s",
+            j, retire_inst_cycle_queue[j], retire_inst_robIdx_queue[j], retire_inst_pc_queue[j], retire_inst_inst_queue[j],
             retire_inst_wen_queue[j] != 0, retire_inst_wdst_queue[j],
             retire_inst_wdata_queue[j], retire_inst_skip_queue[j]?" (skip)":"");
         break;

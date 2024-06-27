@@ -45,6 +45,7 @@
 `define DPIC_ARG_BYTE input byte
 `define DPIC_ARG_INT  input int
 `define DPIC_ARG_LONG input longint
+`define DPIC_ARG_STR  input string
 
 // DifftestArchEvent
 `DIFFTEST_DPIC_FUNC_DECL(ArchEvent) (
@@ -74,6 +75,7 @@ endmodule
   `DPIC_ARG_BIT  valid,
   `DPIC_ARG_LONG pc,
   `DPIC_ARG_INT  instr,
+  `DPIC_ARG_INT  robIdx,
   `DPIC_ARG_BYTE special,
   `DPIC_ARG_BIT  skip,
   `DPIC_ARG_BIT  isRVC,
@@ -89,6 +91,7 @@ endmodule
   input        valid,
   input [63:0] pc,
   input [31:0] instr,
+  input [31:0] robIdx,
   input [ 7:0] special,
   input        skip,
   input        isRVC,
@@ -99,7 +102,7 @@ endmodule
 );
   `DIFFTEST_MOD_DPIC_CALL_BEGIN_WITH_EN(valid, InstrCommit) (
     coreid, index,
-    valid, pc, instr, special, skip, isRVC, scFailed, wen, wdest, wdata
+    valid, pc, instr, robIdx, special, skip, isRVC, scFailed, wen, wdest, wdata
   ) `DIFFTEST_MOD_DPIC_CALL_END_WITH_EN(InstrCommit)
 endmodule
 
@@ -719,3 +722,20 @@ endmodule
   ) `DIFFTEST_MOD_DPIC_CALL_END_WITH_EN(RunaheadMemdepPred)
 endmodule
 
+
+`DIFFTEST_DPIC_FUNC_DECL(LogEvent) (
+  `DPIC_ARG_BYTE coreid,
+  `DPIC_ARG_STR name,
+  `DPIC_ARG_LONG value
+);
+`DIFFTEST_MOD_DECL(LogEvent) #(
+  parameter name = "name"
+)(
+  input         clock,
+  input [ 7:0] coreid,
+  input [63: 0] value
+);
+  `DIFFTEST_MOD_DPIC_CALL_BEGIN(LogEvent) (
+    coreid, name, value
+  ) `DIFFTEST_MOD_DPIC_CALL_END(LogEvent)
+endmodule

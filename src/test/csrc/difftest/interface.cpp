@@ -53,6 +53,7 @@ INTERFACE_INSTR_COMMIT {
   if (packet->valid) {
     packet->pc       = pc;
     packet->inst     = instr;
+    packet->robIdx   = robIdx;
     packet->skip     = skip;
     packet->isRVC    = isRVC;
     packet->scFailed = scFailed;
@@ -341,4 +342,12 @@ INTERFACE_RUNAHEAD_MEMDEP_PRED {
     packet->pc = pc;
   }
   *oracle_vaddr = packet->oracle_vaddr;
+}
+
+INTERFACE_LOG_EVENT {
+  RETURN_NO_NULL
+  if (difftest[coreid]->isEnableLog()) {
+    auto dut = difftest[coreid]->get_dut();
+    dut->log_state[name] = value;
+  }
 }

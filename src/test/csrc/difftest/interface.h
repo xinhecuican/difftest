@@ -38,6 +38,7 @@
 #define DPIC_ARG_BYTE uint8_t
 #define DPIC_ARG_INT  uint32_t
 #define DPIC_ARG_LONG uint64_t
+#define DPIC_ARG_STR  const char*
 
 // #define DPIC_ARG_BIT  svBit
 // #define DPIC_ARG_BYTE char
@@ -72,6 +73,7 @@ extern "C" int v_difftest_step();
     DPIC_ARG_BIT  valid,                 \
     DPIC_ARG_LONG pc,                    \
     DPIC_ARG_INT  instr,                 \
+    DPIC_ARG_INT  robIdx,                \
     DPIC_ARG_BYTE special,               \
     DPIC_ARG_BIT  skip,                  \
     DPIC_ARG_BIT  isRVC,                 \
@@ -371,6 +373,13 @@ extern "C" int v_difftest_step();
     uint64_t* oracle_vaddr                         \
   )
 
+#define INTERFACE_LOG_EVENT                        \
+  DIFFTEST_DPIC_FUNC_DECL(LogEvent) (              \
+    DPIC_ARG_BYTE coreid,                          \
+    DPIC_ARG_STR name,                             \
+    DPIC_ARG_LONG value                            \
+  )
+
 INTERFACE_ARCH_EVENT;
 INTERFACE_INSTR_COMMIT;
 INTERFACE_TRAP_EVENT;
@@ -387,5 +396,5 @@ INTERFACE_RUNAHEAD_EVENT;
 INTERFACE_RUNAHEAD_COMMIT_EVENT;
 INTERFACE_RUNAHEAD_REDIRECT_EVENT;
 INTERFACE_RUNAHEAD_MEMDEP_PRED;
-
+INTERFACE_LOG_EVENT;
 #endif

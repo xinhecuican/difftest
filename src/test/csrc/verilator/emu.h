@@ -42,7 +42,7 @@ struct EmuArgs {
 #endif
   const char *image;
   const char *snapshot_path;
-  const char *wave_path;
+  std::string log_path;
   bool enable_waveform;
   bool enable_snapshot;
   bool force_dump_result;
@@ -64,7 +64,7 @@ struct EmuArgs {
     track_instr = 0;
 #endif
     snapshot_path = NULL;
-    wave_path = NULL;
+    log_path = "";
     image = NULL;
     enable_waveform = false;
     enable_snapshot = true;

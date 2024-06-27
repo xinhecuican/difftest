@@ -48,6 +48,7 @@ static inline void print_help(const char *file) {
   printf("  -i, --image=FILE           run with this image file\n");
   printf("  -b, --log-begin=NUM        display log from NUM th cycle\n");
   printf("  -e, --log-end=NUM          stop display log at NUM th cycle\n");
+  printf("  -l, --log-path=PATH        log path\n");
 #ifdef DEBUG_REFILL
   printf("  -T, --track-instr=ADDR     track refill action concerning ADDR\n");
 #endif
@@ -59,7 +60,6 @@ static inline void print_help(const char *file) {
   printf("      --dump-tl              dump tilelink transactions\n");
 #endif
   printf("      --sim-run-ahead        let a fork of simulator run ahead of commit for perf analysis\n");
-  printf("      --wave-path=FILE       dump waveform to a specified PATH\n");
   printf("      --enable-fork          enable folking child processes to debug\n");
   printf("      --no-diff              disable differential testing\n");
   printf("      --diff=PATH            set the path of REF for differential testing\n");
@@ -81,7 +81,6 @@ inline EmuArgs parse_args(int argc, const char *argv[]) {
     { "no-diff",           0, NULL,  0  },
     { "enable-fork",       0, NULL,  0  },
     { "enable-jtag",       0, NULL,  0  },
-    { "wave-path",         1, NULL,  0  },
     { "sim-run-ahead",     0, NULL,  0  },
 #ifdef DEBUG_TILELINK
     { "dump-tl",           0, NULL,  0  },
@@ -97,13 +96,14 @@ inline EmuArgs parse_args(int argc, const char *argv[]) {
     { "image",             1, NULL, 'i' },
     { "log-begin",         1, NULL, 'b' },
     { "log-end",           1, NULL, 'e' },
+    { "log-path",          1, NULL, 'l' },
     { "help",              0, NULL, 'h' },
     { 0,                   0, NULL,  0  }
   };
 
   int o;
   while ( (o = getopt_long(argc, const_cast<char *const*>(argv),
-          "-s:C:I:T:W:hi:m:b:e:", long_options, &long_index)) != -1) {
+          "-s:C:I:T:W:hi:m:b:e:l:", long_options, &long_index)) != -1) {
     switch (o) {
       case 0:
         switch (long_index) {
@@ -115,7 +115,7 @@ inline EmuArgs parse_args(int argc, const char *argv[]) {
           case 5: args.enable_diff = false; continue;
           case 6: args.enable_fork = true; continue;
           case 7: args.enable_jtag = true; continue;
-          case 8: args.wave_path = optarg; continue;
+          case 8: args.log_path = optarg; continue;
           case 9:
 #ifdef ENABLE_RUNHEAD
             args.enable_runahead = true;
@@ -158,6 +158,7 @@ inline EmuArgs parse_args(int argc, const char *argv[]) {
       case 'i': args.image = optarg; break;
       case 'b': args.log_begin = atoll(optarg);  break;
       case 'e': args.log_end = atoll(optarg); break;
+      case 'l': args.log_path = optarg; break;
     }
   }
 
@@ -204,8 +205,9 @@ Emulator::Emulator(int argc, const char *argv[]):
     Verilated::traceEverOn(true);	// Verilator must compute traced signals
     tfp = new VerilatedVcdC;
     dut_ptr->trace(tfp, 99);	// Trace 99 levels of hierarchy
-    if (args.wave_path != NULL) {
-      tfp->open(args.wave_path);
+    if (args.log_path != "") {
+      std::string wave_path = args.log_path + "wave.vcd";
+      tfp->open(wave_path.c_str());
     }
     else {
       time_t now = time(NULL);
@@ -459,6 +461,18 @@ uint64_t Emulator::execute(uint64_t max_cycle, uint64_t max_instr) {
 
   if(args.enable_runahead){
     runahead_cleanup(); // remove all checkpoints
+  }
+
+  // record perf
+  if(args.enable_diff) {
+    for(int i=0; i<NUM_CORES; i++){
+      difftest[i]->setEnabelLog(true);
+    }
+    dut_ptr->clock = 0;
+    dut_ptr->eval();
+    dut_ptr->clock = 1;
+    dut_ptr->eval();
+    difftest_log(args.log_path);
   }
 
   if (args.enable_fork) {
