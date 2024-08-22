@@ -37,6 +37,7 @@ struct EmuArgs {
   uint64_t warmup_instr;
   uint64_t stat_cycles;
   uint64_t log_begin, log_end;
+  uint64_t wave_begin, wave_end;
 #ifdef DEBUG_REFILL
   uint64_t track_instr;
 #endif

@@ -356,6 +356,9 @@ int Difftest::do_store_check() {
     auto addr = dut.store[i].addr;
     auto data = dut.store[i].data;
     auto mask = dut.store[i].mask;
+    // if(dut.store[i].addr == 0x80024040){
+    //   printf("data: %lx, mask: %lx\n", data, mask);
+    // }
     if (proxy->store_commit(&addr, &data, &mask)) {
       display();
       printf("Mismatch for store commits %d: \n", i);
@@ -589,32 +592,34 @@ void DiffState::display(int coreid) {
   }
 
   printf("\n============== Commit Instr Trace ==============\n");
+  int current = 0;
   for (int j = 0; j < DEBUG_INST_TRACE_SIZE; j++) {
-    switch (retire_inst_type_queue[j]) {
+    current = (j + retire_inst_pointer) % DEBUG_INST_TRACE_SIZE;
+    switch (retire_inst_type_queue[current]) {
       case RET_NORMAL:
         printf("commit inst [%02d]: cycle: %016ld robIdx: %08x pc %010lx inst %08x wen %x dst %08x data %016lx%s",
-            j, retire_inst_cycle_queue[j], retire_inst_robIdx_queue[j], retire_inst_pc_queue[j], retire_inst_inst_queue[j],
-            retire_inst_wen_queue[j] != 0, retire_inst_wdst_queue[j],
-            retire_inst_wdata_queue[j], retire_inst_skip_queue[j]?" (skip)":"");
+            current, retire_inst_cycle_queue[current], retire_inst_robIdx_queue[current], retire_inst_pc_queue[current], retire_inst_inst_queue[current],
+            retire_inst_wen_queue[current] != 0, retire_inst_wdst_queue[current],
+            retire_inst_wdata_queue[current], retire_inst_skip_queue[current]?" (skip)":"");
         break;
       case RET_EXC:
-        printf("exception   [%02d]: pc %010lx inst %08x cause %016lx", j,
-            retire_inst_pc_queue[j], retire_inst_inst_queue[j], retire_inst_wdata_queue[j]);
+        printf("exception   [%02d]: pc %010lx inst %08x cause %016lx", current,
+            retire_inst_pc_queue[current], retire_inst_inst_queue[current], retire_inst_wdata_queue[current]);
         break;
       case RET_INT:
-        printf("interrupt   [%02d]: pc %010lx inst %08x cause %016lx", j,
-            retire_inst_pc_queue[j], retire_inst_inst_queue[j], retire_inst_wdata_queue[j]);
+        printf("interrupt   [%02d]: pc %010lx inst %08x cause %016lx", current,
+            retire_inst_pc_queue[current], retire_inst_inst_queue[current], retire_inst_wdata_queue[current]);
         break;
     }
     if (!spike_invalid) {
       char inst_str[32];
       char dasm_result[64] = {0};
-      sprintf(inst_str, "%08x", retire_inst_inst_queue[j]);
+      sprintf(inst_str, "%08x", retire_inst_inst_queue[current]);
       spike_dasm(dasm_result, inst_str);
       printf(" %s", dasm_result);
     }
     auto retire_pointer = (retire_inst_pointer + DEBUG_INST_TRACE_SIZE - 1) % DEBUG_INST_TRACE_SIZE;
-    printf("%s\n", (j == retire_pointer)?" <--" : "");
+    printf("%s\n", (current == retire_pointer)?" <--" : "");
 
   }
   fflush(stdout);

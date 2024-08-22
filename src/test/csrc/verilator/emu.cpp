@@ -48,6 +48,8 @@ static inline void print_help(const char *file) {
   printf("  -i, --image=FILE           run with this image file\n");
   printf("  -b, --log-begin=NUM        display log from NUM th cycle\n");
   printf("  -e, --log-end=NUM          stop display log at NUM th cycle\n");
+  printf("  -B, --wave-begin=NUM       save waveform from NUM th cycle\n");
+  printf("  -E, --wave-end=NUM         stop save waveform\n");
   printf("  -l, --log-path=PATH        log path\n");
 #ifdef DEBUG_REFILL
   printf("  -T, --track-instr=ADDR     track refill action concerning ADDR\n");
@@ -96,6 +98,8 @@ inline EmuArgs parse_args(int argc, const char *argv[]) {
     { "image",             1, NULL, 'i' },
     { "log-begin",         1, NULL, 'b' },
     { "log-end",           1, NULL, 'e' },
+    { "wave-begin",        1, NULL, 'B' },
+    { "wave-end",          1, NULL, 'E' },
     { "log-path",          1, NULL, 'l' },
     { "help",              0, NULL, 'h' },
     { 0,                   0, NULL,  0  }
@@ -103,7 +107,7 @@ inline EmuArgs parse_args(int argc, const char *argv[]) {
 
   int o;
   while ( (o = getopt_long(argc, const_cast<char *const*>(argv),
-          "-s:C:I:T:W:hi:m:b:e:l:", long_options, &long_index)) != -1) {
+          "-s:C:I:T:W:hi:m:b:e:B:E:l:", long_options, &long_index)) != -1) {
     switch (o) {
       case 0:
         switch (long_index) {
@@ -158,6 +162,8 @@ inline EmuArgs parse_args(int argc, const char *argv[]) {
       case 'i': args.image = optarg; break;
       case 'b': args.log_begin = atoll(optarg);  break;
       case 'e': args.log_end = atoll(optarg); break;
+      case 'B': args.wave_begin = atoll(optarg); break;
+      case 'E': args.wave_end = atoll(optarg); break;
       case 'l': args.log_path = optarg; break;
     }
   }
@@ -278,8 +284,8 @@ inline void Emulator::single_cycle() {
   if (enable_waveform) {
     auto trap = difftest[0]->get_trap_event();
     uint64_t cycle = trap->cycleCnt;
-    uint64_t begin = dut_ptr->io_logCtrl_log_begin;
-    uint64_t end   = dut_ptr->io_logCtrl_log_end;
+    uint64_t begin = args.wave_begin;
+    uint64_t end   = args.wave_end;
     bool in_range  = (begin <= cycle) && (cycle <= end);
     if (in_range || force_dump_wave) { tfp->dump(cycle); }
   }
@@ -498,9 +504,7 @@ uint64_t Emulator::execute(uint64_t max_cycle, uint64_t max_instr) {
 inline char* Emulator::timestamp_filename(time_t t, char *buf) {
   char buf_time[64];
   strftime(buf_time, sizeof(buf_time), "%F@%T", localtime(&t));
-  char *noop_home = getenv("NOOP_HOME");
-  assert(noop_home != NULL);
-  int len = snprintf(buf, 1024, "%s/build/%s", noop_home, buf_time);
+  int len = snprintf(buf, 1024, "%s%s", args.log_path.c_str(), buf_time);
   return buf + len;
 }
 
@@ -522,8 +526,9 @@ inline char* Emulator::logdb_filename(time_t t) {
 
 inline char* Emulator::waveform_filename(time_t t) {
   static char buf[1024];
-  char *p = timestamp_filename(t, buf);
-  strcpy(p, ".vcd");
+  // char *p = timestamp_filename(t, buf);
+  // strcpy(p, ".vcd");
+  int len = snprintf(buf, 1024, "%s%s", args.log_path.c_str(), "wave.vcd");
   printf("dump wave to %s...\n", buf);
   return buf;
 }
@@ -532,10 +537,9 @@ inline char* Emulator::cycle_wavefile(uint64_t cycles, time_t t) {
   static char buf[1024];
   char buf_time[64];
   strftime(buf_time, sizeof(buf_time), "%F@%T", localtime(&t));
-  char *noop_home = getenv("NOOP_HOME");
-  assert(noop_home != NULL);
-  int len = snprintf(buf, 1024, "%s/build/%s_%ld", noop_home, buf_time, cycles);
-  strcpy(buf + len, ".vcd");
+  // int len = snprintf(buf, 1024, "%s/build/%s_%ld", args.log_path, buf_time, cycles);
+  int len  = snprintf(buf, 1024, "%swave.vcd", args.log_path.c_str());
+  // strcpy(buf + len, ".vcd");
   FORK_PRINTF("dump wave to %s...\n", buf);
   return buf;
 }

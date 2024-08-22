@@ -18,6 +18,7 @@
 #define __AXI4_H
 
 #include <stdint.h>
+#include "string.h"
 
 // #define DEBUG_LOG_AXI4
 

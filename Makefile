@@ -30,9 +30,10 @@ SIM_TOP_V = $(BUILD_DIR)/src/sim/$(SIM_TOP).sv
 
 # co-simulation with DRAMsim3
 ifeq ($(WITH_DRAMSIM3),1)
-ifndef DRAMSIM3_HOME
-$(error DRAMSIM3_HOME is not set)
+ifeq ($(wildcard DRAMsim3),)
+$(error dramsim3 uninstall. run install_dramsim3.sh in scripts dir)
 endif
+DRAMSIM3_HOME = $(abspath DRAMsim3)
 override SIM_ARGS += --with-dramsim3
 endif
 
@@ -55,6 +56,7 @@ PLUGIN_CHEAD_DIR = $(abspath ./src/test/csrc/plugin/include)
 
 SIM_VSRC = $(shell find ./src/test/vsrc/common -name "*.v" -or -name "*.sv")
 SRC = $(shell find $(DESIGN_DIR)/src -name "*.v" -or -name "*.sv" -or -name "*.svh")
+SRC += ${BUILD_DIR}/predefine.svh ${BUILD_DIR}/postdefine.svh
 
 SUBDIRS := $(shell find $(DESIGN_DIR)/src -type d)
 INCLUDES := $(addprefix -I, $(SUBDIRS))

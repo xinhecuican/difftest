@@ -69,7 +69,7 @@ endif
 # co-simulation with DRAMsim3
 ifeq ($(WITH_DRAMSIM3),1)
 EMU_CXXFLAGS += -I$(DRAMSIM3_HOME)/src
-EMU_CXXFLAGS += -DWITH_DRAMSIM3 -DDRAMSIM3_CONFIG=\\\"$(DRAMSIM3_HOME)/configs/XiangShan.ini\\\" -DDRAMSIM3_OUTDIR=\\\"$(BUILD_DIR)\\\"
+EMU_CXXFLAGS += -DWITH_DRAMSIM3 -DDRAMSIM3_CONFIG=\\\"$(DRAMSIM3_HOME)/configs/DDR4_4Gb_x16_2400.ini\\\" -DDRAMSIM3_OUTDIR=\\\"$(BUILD_DIR)\\\"
 EMU_LDFLAGS  += $(DRAMSIM3_HOME)/build/libdramsim3.a
 endif
 
@@ -133,8 +133,10 @@ endif
 # use 'emu -h' to see more details
 B ?= 0
 E ?= 0
+WB ?= 0
+WE ?= 0
 
-EMU_FLAGS = -s $(SEED) -b $(B) -e $(E) $(SNAPSHOT_OPTION) $(WAVEFORM) $(EMU_ARGS)
+EMU_FLAGS = -s $(SEED) -b $(B) -e $(E) -B $(WB) -E $(WE) $(SNAPSHOT_OPTION) $(WAVEFORM) $(EMU_ARGS)
 
 emu: $(EMU)
 

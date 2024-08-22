@@ -351,7 +351,8 @@ void dramsim3_helper_rising(const axi_channel &axi) {
     // flush data to memory
     uint64_t waddr = wait_resp_b->req->address % EMU_RAM_SIZE;
     dramsim3_meta *meta = static_cast<dramsim3_meta *>(wait_resp_b->req->meta);
-    void *start_addr = ram + (waddr / sizeof(uint64_t));
+    uint8_t* ram_int = reinterpret_cast<uint8_t*>(ram);
+    void *start_addr = ram_int + waddr;
     memcpy(start_addr, meta->data, meta->len * meta->size);
     for (int i = 0; i < meta->len; i++) {
     //   uint64_t address = wait_resp_b->req->address % EMU_RAM_SIZE;
@@ -413,7 +414,8 @@ void dramsim3_helper_falling(axi_channel &axi) {
   if (wait_resp_r) {
     dramsim3_meta *meta = static_cast<dramsim3_meta *>(wait_resp_r->req->meta);
     // printf("meta->size %d offset %d\n", meta->size, meta->offset*meta->size/sizeof(uint64_t));
-    void *data_start = meta->data + meta->offset*meta->size / sizeof(uint64_t);
+    uint8_t* meta_data = reinterpret_cast<uint8_t*>(meta->data);
+    void *data_start = meta_data + meta->offset*meta->size;
     axi_put_rdata(axi, data_start, meta->size, meta->offset == meta->len - 1, meta->id);
   }
 
