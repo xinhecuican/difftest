@@ -236,7 +236,7 @@ void dramsim3_finish() {
   delete dram;
 }
 
-#define MAX_AXI_DATA_LEN 8
+#define MAX_AXI_DATA_LEN 16
 
 // currently does not support masked read or write
 struct dramsim3_meta {
@@ -382,9 +382,11 @@ void dramsim3_helper_rising(const axi_channel &axi) {
       assert(wait_req_w != NULL);
     }
     dramsim3_meta *meta = static_cast<dramsim3_meta *>(wait_req_w->meta);
-    void *data_start = meta->data + meta->offset * meta->size / sizeof(uint64_t);
+    uint8_t* meta_data = reinterpret_cast<uint8_t*>(meta->data);
+    void *data_start = meta_data + meta->offset * meta->size;
     uint64_t waddr = axi.aw.addr % EMU_RAM_SIZE;
-    const void *src_addr = ram + (waddr + meta->offset * meta->size) / sizeof(uint64_t);
+    uint8_t* ram_int = reinterpret_cast<uint8_t*>(ram);
+    const void *src_addr = ram_int + (waddr + meta->offset * meta->size);
     axi_get_wdata(axi, data_start, src_addr, meta->size);
     meta->offset++;
     // printf("accept a new write data\n");

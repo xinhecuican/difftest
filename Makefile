@@ -18,7 +18,7 @@ SIM_TOP    ?= SimTop
 DESIGN_DIR ?= ../..
 NUM_CORES  ?= 1
 
-BUILD_DIR = $(DESIGN_DIR)/build
+BUILD_DIR = $(shell readlink -f $(DESIGN_DIR)/build)
 SIM_TOP_V = $(BUILD_DIR)/src/sim/$(SIM_TOP).sv
 
 # DIFF_SCALA_FILE = $(shell find ./src/main/scala -name '*.scala')
