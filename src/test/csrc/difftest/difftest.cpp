@@ -351,7 +351,7 @@ void Difftest::do_first_instr_commit() {
 int Difftest::do_store_check() {
   for (int i = 0; i < DIFFTEST_STORE_WIDTH; i++) {
     if (!dut.store[i].valid) {
-      return 0;
+      continue;
     }
     auto addr = dut.store[i].addr;
     auto data = dut.store[i].data;

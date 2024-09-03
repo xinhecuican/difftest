@@ -81,6 +81,7 @@ endif
 VERILATOR_FLAGS =                   \
   --top-module $(EMU_TOP)           \
   --compiler clang                  \
+  --no-timing 						\
   +define+VERILATOR=1               \
   +define+PRINTF_COND=1             \
   +define+RANDOMIZE_REG_INIT        \

@@ -70,7 +70,7 @@ REF_SO := $(NEMU_HOME)/build/riscv64-nemu-interpreter-so
 ref: $(REF_SO)
 
 $(REF_SO):
-	$(MAKE) -C $(NEMU_HOME) riscv64-do-ref_defconfig
+	$(MAKE) -C $(NEMU_HOME) riscv64-do-ref_defconfig CPT_CROSS_COMPILE=riscv64-unknown-elf-
 	$(MAKE) -C $(NEMU_HOME)
 
 SEED ?= $(shell shuf -i 1-10000 -n 1)
