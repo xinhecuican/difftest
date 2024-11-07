@@ -723,10 +723,10 @@ void Emulator::fork_child_init() {
 #endif
 #ifdef ENABLE_SIMULATOR_DEBUG_INFO
   // let simulator print debug info
-  DynamicSimulatorConfig nemu_config;
-  nemu_config.debug_difftest = true;
-  for (int i = 0; i < NUM_CORES; i++) {
-    difftest[i]->proxy->update_config(&nemu_config);
-  }
+  // DynamicSimulatorConfig nemu_config;
+  // nemu_config.debug_difftest = true;
+  // for (int i = 0; i < NUM_CORES; i++) {
+  //   difftest[i]->proxy->update_config(&nemu_config);
+  // }
 #endif
 }
