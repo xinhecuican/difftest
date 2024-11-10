@@ -59,6 +59,9 @@ NemuProxy::NemuProxy(int coreid) {
   regcpy = (void (*)(void *, bool))dlsym(handle, "difftest_regcpy");
   check_and_assert(regcpy);
 
+  mpfcpy = (void (*)(void *, bool))dlsym(handle, "difftest_mpfcpy");
+  check_and_assert(mpfcpy);
+
   csrcpy = (void (*)(void *, bool))dlsym(handle, "difftest_csrcpy");
   check_and_assert(csrcpy);
 

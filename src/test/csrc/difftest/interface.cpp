@@ -85,6 +85,9 @@ INTERFACE_CSR_STATE {
   packet->sscratch = sscratch;
   packet->mideleg = mideleg;
   packet->medeleg = medeleg;
+  auto packet2 = difftest[coreid]->get_mpf_state();
+  packet2->mcycle = mcycle;
+  packet2->minstret = minstret;
 }
 
 INTERFACE_INT_REG_STATE {

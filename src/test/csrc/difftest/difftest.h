@@ -93,6 +93,11 @@ typedef struct __attribute__((packed)) {
   uint64_t this_pc;
 } arch_csr_state_t;
 
+typedef struct __attribute__((packed)) {
+  uint64_t mcycle;
+  uint64_t minstret;
+} arch_mpfcounter_state_t;
+
 const int DIFFTEST_NR_REG = (sizeof(arch_reg_state_t) + sizeof(arch_csr_state_t)) / sizeof(uint64_t);
 
 typedef struct {
@@ -172,6 +177,7 @@ typedef struct {
   instr_commit_t    commit[DIFFTEST_COMMIT_WIDTH];
   arch_reg_state_t  regs;
   arch_csr_state_t  csr;
+  arch_mpfcounter_state_t mpf;
   sbuffer_state_t   sbuffer[DIFFTEST_SBUFFER_RESP_WIDTH];
   store_event_t     store[DIFFTEST_STORE_WIDTH];
   load_event_t      load[DIFFTEST_COMMIT_WIDTH];
@@ -270,6 +276,9 @@ public:
   }
   inline arch_csr_state_t *get_csr_state() {
     return &(dut.csr);
+  }
+  inline arch_mpfcounter_state_t *get_mpf_state() {
+    return &(dut.mpf);
   }
   inline arch_reg_state_t *get_arch_reg_state() {
     return &(dut.regs);

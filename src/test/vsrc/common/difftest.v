@@ -149,7 +149,9 @@ endmodule
   `DPIC_ARG_LONG mscratch,
   `DPIC_ARG_LONG sscratch,
   `DPIC_ARG_LONG mideleg,
-  `DPIC_ARG_LONG medeleg
+  `DPIC_ARG_LONG medeleg,
+  `DPIC_ARG_LONG mcycle,
+  `DPIC_ARG_LONG minstret
 );
 `DIFFTEST_MOD_DECL(CSRState)(
   input        clock,
@@ -171,12 +173,14 @@ endmodule
   input [63:0] mscratch,
   input [63:0] sscratch,
   input [63:0] mideleg,
-  input [63:0] medeleg
+  input [63:0] medeleg,
+  input [63:0] mcycle,
+  input [63:0] minstret
 );
   `DIFFTEST_MOD_DPIC_CALL_BEGIN(CSRState) (
     coreid, {6'd0, priviledgeMode},
     mstatus, sstatus, mepc, sepc, mtval, stval, mtvec, stvec,
-    mcause, scause, satp, mip, mie, mscratch, sscratch, mideleg, medeleg
+    mcause, scause, satp, mip, mie, mscratch, sscratch, mideleg, medeleg, mcycle, minstret
   ) `DIFFTEST_MOD_DPIC_CALL_END(CSRState)
 endmodule
 

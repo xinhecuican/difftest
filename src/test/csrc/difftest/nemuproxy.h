@@ -27,6 +27,7 @@ public:
   // public callable functions
   void (*memcpy)(paddr_t nemu_addr, void *dut_buf, size_t n, bool direction);
   void (*regcpy)(void *dut, bool direction);
+  void (*mpfcpy)(void *dut, bool direction);
   void (*csrcpy)(void *dut, bool direction);
   void (*uarchstatus_cpy)(void *dut, bool direction);
   int (*store_commit)(uint64_t *saddr, uint64_t *sdata, uint8_t *smask);

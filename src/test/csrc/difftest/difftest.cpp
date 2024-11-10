@@ -138,6 +138,7 @@ int Difftest::step() {
 
   num_commit = 0; // reset num_commit this cycle to 0
   // interrupt has the highest priority
+  proxy->mpfcpy(dut_regs_ptr, DUT_TO_REF);
   if (dut.event.interrupt) {
     dut.csr.this_pc = dut.event.exceptionPC;
     do_interrupt();
@@ -159,6 +160,7 @@ int Difftest::step() {
         num_commit++;
       }
     }
+    
   }
 
   if (!progress) {

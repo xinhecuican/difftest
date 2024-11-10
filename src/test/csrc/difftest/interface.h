@@ -115,7 +115,9 @@ extern "C" int v_difftest_step();
     DPIC_ARG_LONG mscratch,              \
     DPIC_ARG_LONG sscratch,              \
     DPIC_ARG_LONG mideleg,               \
-    DPIC_ARG_LONG medeleg                \
+    DPIC_ARG_LONG medeleg,               \
+    DPIC_ARG_LONG mcycle,                \
+    DPIC_ARG_LONG minstret               \
   )
 
 // v_difftest_ArchIntRegState
