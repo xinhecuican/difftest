@@ -209,10 +209,18 @@ Emulator::Emulator(int argc, const char *argv[]):
   enable_waveform = args.enable_waveform && !args.enable_fork;
   if (enable_waveform ) {
     Verilated::traceEverOn(true);	// Verilator must compute traced signals
-    tfp = new VerilatedVcdC;
+#ifdef ENABLE_FST
+  tfp = new VerilatedFstC;
+#else
+  tfp = new VerilatedVcdC;
+#endif
     dut_ptr->trace(tfp, 99);	// Trace 99 levels of hierarchy
     if (args.log_path != "") {
+#ifdef ENABLE_FST
+      std::string wave_path = args.log_path + "wave.fst";
+#else
       std::string wave_path = args.log_path + "wave.vcd";
+#endif
       tfp->open(wave_path.c_str());
     }
     else {
@@ -481,7 +489,7 @@ uint64_t Emulator::execute(uint64_t max_cycle, uint64_t max_instr) {
     difftest_log(args.log_path);
   }
 
-  if (args.enable_fork) {
+  if (args.enable_fork && !is_fork_child()) {
     bool need_wakeup = trapCode != STATE_GOODTRAP && trapCode != STATE_LIMIT_EXCEEDED && trapCode != STATE_SIG;
     if (need_wakeup) {
       lightsss.wakeup_child(cycles);
@@ -528,7 +536,11 @@ inline char* Emulator::waveform_filename(time_t t) {
   static char buf[1024];
   // char *p = timestamp_filename(t, buf);
   // strcpy(p, ".vcd");
+#ifdef ENABLE_FST
+  int len = snprintf(buf, 1024, "%s%s", args.log_path.c_str(), "wave.fst");
+#else
   int len = snprintf(buf, 1024, "%s%s", args.log_path.c_str(), "wave.vcd");
+#endif
   printf("dump wave to %s...\n", buf);
   return buf;
 }
@@ -538,7 +550,11 @@ inline char* Emulator::cycle_wavefile(uint64_t cycles, time_t t) {
   char buf_time[64];
   strftime(buf_time, sizeof(buf_time), "%F@%T", localtime(&t));
   // int len = snprintf(buf, 1024, "%s/build/%s_%ld", args.log_path, buf_time, cycles);
+#ifdef ENABLE_FST
+  int len  = snprintf(buf, 1024, "%swave.fst", args.log_path.c_str());
+#else
   int len  = snprintf(buf, 1024, "%swave.vcd", args.log_path.c_str());
+#endif
   // strcpy(buf + len, ".vcd");
   FORK_PRINTF("dump wave to %s...\n", buf);
   return buf;
@@ -702,10 +718,19 @@ void Emulator::snapshot_load(const char *filename) {
 #endif
 
 void Emulator::fork_child_init() {
-#if EMU_THREAD > 1
-#ifdef VERILATOR_4_210
-  dut_ptr->vlSymsp->__Vm_threadPoolp = new VlThreadPool(dut_ptr->contextp(), EMU_THREAD - 1, 0);
+#ifdef VERILATOR_VERSION_INTEGER // >= v4.220
+#if VERILATOR_VERSION_INTEGER >= 5016000
+  // This will cause 288 bytes leaked for each one fork call.
+  // However, one million snapshots cause only 288MB leaks, which is still acceptable.
+  // See verilator/test_regress/t/t_wrapper_clone.cpp:48 to avoid leaks.
+  dut_ptr->atClone();
 #else
+#error Please use Verilator v5.016 or newer versions.
+#endif                 // check VERILATOR_VERSION_INTEGER values
+#elif EMU_THREAD > 1   // VERILATOR_VERSION_INTEGER not defined
+#ifdef VERILATOR_4_210 // v4.210 <= version < 4.220
+  dut_ptr->vlSymsp->__Vm_threadPoolp = new VlThreadPool(dut_ptr->contextp(), EMU_THREAD - 1, 0);
+#else                  // older than v4.210
   dut_ptr->__Vm_threadPoolp = new VlThreadPool(dut_ptr->contextp(), EMU_THREAD - 1, 0);
 #endif
 #endif
@@ -713,7 +738,11 @@ void Emulator::fork_child_init() {
 #if VM_TRACE == 1
   //dump wave
   Verilated::traceEverOn(true);
+#ifdef ENABLE_FST
+  tfp = new VerilatedFstC;
+#else
   tfp = new VerilatedVcdC;
+#endif
   dut_ptr->trace(tfp, 99);
   time_t now = time(NULL);
   tfp->open(cycle_wavefile(cycles, now));

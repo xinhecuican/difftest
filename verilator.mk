@@ -35,15 +35,31 @@ endif
 VEXTRA_FLAGS  = -I$(abspath $(BUILD_DIR)) $(INCLUDE_DIRS) --x-assign unique -O3 -CFLAGS "$(EMU_CXXFLAGS)" -LDFLAGS "$(EMU_LDFLAGS)"
 
 # Verilator version check
-VERILATOR_4_210 := $(shell expr `verilator --version | cut -f3 -d.` \>= 210)
+VERILATOR_VER_CMD = verilator --version 2> /dev/null | cut -f2 -d' ' | tr -d '.'
+VERILATOR_4_210 := $(shell expr `$(VERILATOR_VER_CMD)` \>= 4210 2> /dev/null)
 ifeq ($(VERILATOR_4_210),1)
 EMU_CXXFLAGS += -DVERILATOR_4_210
+VEXTRA_FLAGS += --instr-count-dpi 1
+endif
+VERILATOR_5_000 := $(shell expr `$(VERILATOR_VER_CMD)` \>= 5000 2> /dev/null)
+ifeq ($(VERILATOR_5_000),1)
+VEXTRA_FLAGS += --no-timing +define+VERILATOR_5
+else
+VEXTRA_FLAGS += +define+VERILATOR_LEGACY
+endif
+VERILATOR_5_024 := $(shell expr `$(VERILATOR_VER_CMD)` \>= 5024 2> /dev/null)
+ifeq ($(VERILATOR_5_024),1)
+VEXTRA_FLAGS += --quiet-stats
 endif
 
 # Verilator trace support
-EMU_TRACE ?= 1
-ifeq ($(EMU_TRACE),1)
+EMU_TRACE ?=
+ifneq (,$(filter $(EMU_TRACE),1 vcd VCD))
 VEXTRA_FLAGS += --trace --trace-structs
+endif
+ifneq (,$(filter $(EMU_TRACE),fst FST))
+VEXTRA_FLAGS += --trace-fst --trace-structs
+EMU_CXXFLAGS += -DENABLE_FST
 endif
 
 # Verilator multi-thread support

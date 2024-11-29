@@ -22,7 +22,14 @@
 #include "lightsss.h"
 #include "VSimTop.h"
 #include "VSimTop__Syms.h"
+#ifdef ENABLE_FST
+#include <verilated_fst_c.h>
+#else
 #include <verilated_vcd_c.h>	// Trace file format header
+#endif
+#ifdef EMU_THREAD
+#include <verilated_threads.h>
+#endif
 #include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -81,7 +88,11 @@ struct EmuArgs {
 class Emulator {
 private:
   VSimTop *dut_ptr;
-  VerilatedVcdC* tfp;
+#ifdef ENABLE_FST
+  VerilatedFstC *tfp;
+#else
+  VerilatedVcdC *tfp;
+#endif
   bool enable_waveform;
   bool force_dump_wave = false;
 #ifdef VM_SAVABLE
