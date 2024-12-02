@@ -142,12 +142,19 @@ int Difftest::step() {
   if (dut.event.interrupt) {
     dut.csr.this_pc = dut.event.exceptionPC;
     do_interrupt();
+    for (int i = 0; i < DIFFTEST_COMMIT_WIDTH && dut.commit[i].valid; i++) {
+      dut.commit[i].valid = 0;
+    }
   } else if(dut.event.exception) {
     // We ignored instrAddrMisaligned exception (0) for better debug interface
     // XiangShan should always support RVC, so instrAddrMisaligned will never happen
     // TODO: update NEMU, for now, NEMU will update pc when exception happen
+    // BUG: 如果有多条指令commit并且最后一条exception,那么exception前的指令不会提交
     dut.csr.this_pc = dut.event.exceptionPC;
     do_exception();
+    for (int i = 0; i < DIFFTEST_COMMIT_WIDTH && dut.commit[i].valid; i++) {
+      dut.commit[i].valid = 0;
+    }
   } else {
     // TODO: is this else necessary?
     for (int i = 0; i < DIFFTEST_COMMIT_WIDTH && dut.commit[i].valid; i++) {
