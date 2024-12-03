@@ -32,7 +32,7 @@ ifneq ($(CCACHE),)
 export OBJCACHE = ccache
 endif
 
-VEXTRA_FLAGS  = -I$(abspath $(BUILD_DIR)) $(INCLUDE_DIRS) --x-assign unique -O3 -CFLAGS "$(EMU_CXXFLAGS)" -LDFLAGS "$(EMU_LDFLAGS)"
+VEXTRA_FLAGS  = -I$(abspath $(BUILD_DIR)) $(INCLUDE_DIRS) --x-assign unique -O3 -CFLAGS "$(EMU_CXXFLAGS)" -LDFLAGS "$(EMU_LDFLAGS)" -CFLAGS "\$$(PGO_CFLAGS)" -LDFLAGS "\$$(PGO_LDFLAGS)"
 
 # Verilator version check
 VERILATOR_VER_CMD = verilator --version 2> /dev/null | cut -f2 -d' ' | tr -d '.'
@@ -93,11 +93,11 @@ ifeq ($(DUALCORE),1)
 EMU_CXXFLAGS += -DDUALCORE
 endif
 
+OPT_FAST ?= -O3
+
 # --trace
 VERILATOR_FLAGS =                   \
   --top-module $(EMU_TOP)           \
-  --compiler clang                  \
-  --no-timing 						\
   +define+VERILATOR=1               \
   +define+PRINTF_COND=1             \
   +define+RANDOMIZE_REG_INIT        \
@@ -111,14 +111,20 @@ VERILATOR_FLAGS =                   \
   --output-split 30000              \
   --output-split-cfuncs 30000
 
+EMU_DIR = $(BUILD_DIR)/emu-compile
 EMU_MK := $(BUILD_DIR)/emu-compile/V$(EMU_TOP).mk
 EMU_DEPS := $(EMU_VFILES) $(EMU_CXXFILES)
 EMU_HEADERS := $(shell find $(EMU_CSRC_DIR) -name "*.h")     \
                $(shell find $(SIM_CSRC_DIR) -name "*.h")     \
                $(shell find $(DIFFTEST_CSRC_DIR) -name "*.h")
+
+# Profile Guided Optimization
+EMU_PGO_DIR  = $(EMU_DIR)/pgo
+PGO_MAX_CYCLE ?= 2000000
+
 EMU := $(BUILD_DIR)/emu
 
-$(EMU_MK): $(EMU_DEPS)
+$(EMU_MK): $(SRC) | $(EMU_DEPS)
 	@mkdir -p $(@D)
 	@echo "\n[verilator] Generating C++ files..." >> $(TIMELOG)
 	@date -R | tee -a $(TIMELOG)
@@ -127,9 +133,11 @@ $(EMU_MK): $(EMU_DEPS)
 	@echo $(EMU_DEPS) >> $(TIMELOG)
 	$(TIME_CMD) verilator --cc --exe $(VERILATOR_FLAGS) \
 		-o $(abspath $(EMU)) -Mdir $(@D)  $(EMU_DEPS) $(SRC)
+ifneq ($(VERILATOR_5_000),1)
 	find $(BUILD_DIR) -name "VSimTop.h" | xargs sed -i 's/private/public/g'
 	find $(BUILD_DIR) -name "VSimTop.h" | xargs sed -i 's/const vlSymsp/vlSymsp/g'
 	find $(BUILD_DIR) -name "VSimTop__Syms.h" | xargs sed -i 's/VlThreadPool\* const/VlThreadPool*/g'
+endif
 
 EMU_COMPILE_FILTER =
 # 2> $(BUILD_DIR)/g++.err.log | tee $(BUILD_DIR)/g++.out.log | grep 'g++' | awk '{print "Compiling/Generating", $$NF}'
@@ -137,11 +145,43 @@ EMU_COMPILE_FILTER =
 build_emu_local: $(EMU_MK)
 	@echo "\n[g++] Compiling C++ files..." >> $(TIMELOG)
 	@date -R | tee -a $(TIMELOG)
-	$(TIME_CMD) $(MAKE) CXX=clang++ LINK=clang++  VM_PARALLEL_BUILDS=1 OPT_FAST="-O3" -C $(<D) -f $(<F) $(EMU_COMPILE_FILTER)
+	$(TIME_CMD) $(MAKE) CXX=clang++ LINK=clang++  VM_PARALLEL_BUILDS=1 OPT_FAST=$(OPT_FAST) PGO_CFLAGS=$(PGO_CFLAGS) PGO_LDFLAGS=$(PGO_LDFLAGS) -C $(<D) -f $(<F) $(EMU_COMPILE_FILTER)
 
 $(EMU): $(EMU_MK) $(EMU_DEPS) $(EMU_HEADERS) $(REF_SO)
 ifeq ($(REMOTE),localhost)
-	$(MAKE) build_emu_local
+ifdef PGO_WORKLOAD
+	@echo "Building PGO profile..."
+	@stat $(PGO_WORKLOAD) > /dev/null
+	@$(MAKE) clean_obj
+	@mkdir -p $(EMU_PGO_DIR)
+	@sync -d $(BUILD_DIR) -d $(EMU_DIR)
+	@$(MAKE) build_emu_local OPT_FAST=$(OPT_FAST) PGO_CFLAGS="-fprofile-generate=$(EMU_PGO_DIR)" PGO_LDFLAGS="-fprofile-generate=$(EMU_PGO_DIR)"
+	@echo "Training emu with PGO Workload..."
+	@sync -d $(BUILD_DIR) -d $(EMU_DIR)
+	$(EMU) -i $(PGO_WORKLOAD) --max-cycles=$(PGO_MAX_CYCLE) B=0 E=0 1>$(EMU_PGO_DIR)/`date +%s`.log 2>$(EMU_PGO_DIR)/`date +%s`.err $(PGO_EMU_ARGS)
+	@sync -d $(BUILD_DIR) -d $(EMU_DIR)
+ifdef LLVM_PROFDATA
+	$(LLVM_PROFDATA) merge $(EMU_PGO_DIR)/*.profraw -o $(EMU_PGO_DIR)/default.profdata
+else
+	@echo ""
+	@echo "----------------------- NOTICE BEGIN -----------------------"
+	@echo "If your verilator is compiled with LLVM, please don't forget"
+	@echo "to add LLVM_PROFDATA=llvm-profdata when calling make."
+	@echo ""
+	@echo "If your verilator is compiled with GCC, please ignore this"
+	@echo "message and NEVER adding LLVM_PROFDATA when calling make."
+	@echo "----------------------- NOTICE  END  -----------------------"
+	@echo ""
+endif
+	@echo "Building emu with PGO profile..."
+	@$(MAKE) clean_obj
+	@sync -d $(BUILD_DIR) -d $(EMU_DIR)
+	@$(MAKE) build_emu_local OPT_FAST=$(OPT_FAST) PGO_CFLAGS="-fprofile-generate=$(EMU_PGO_DIR)" PGO_LDFLAGS="-fprofile-generate=$(EMU_PGO_DIR)"
+else
+	@echo "Building emu..."
+	$(MAKE) build_emu_local OPT_FAST=$(OPT_FAST)
+endif
+	@sync -d $(BUILD_DIR) -d $(EMU_DIR)
 else
 	ssh -tt $(REMOTE) 'export NOOP_HOME=$(NOOP_HOME); export NEMU_HOME=$(NEMU_HOME); $(MAKE) -C $(NOOP_HOME)/difftest -j230 build_emu_local'
 endif
@@ -167,5 +207,8 @@ coverage:
 	verilator_coverage --annotate build/logs/annotated --annotate-min 1 build/logs/coverage.dat
 	python3 scripts/coverage/coverage.py build/logs/annotated/XSSimTop.v build/XSSimTop_annotated.v
 	python3 scripts/coverage/statistics.py build/XSSimTop_annotated.v >build/coverage.log
+
+clean_obj:
+	rm -f $(EMU_DIR)/*.o $(EMU_DIR)/*.gch $(EMU_DIR)/*.a $(EMU_DIR)/*.d $(EMU)
 
 .PHONY: build_emu_local

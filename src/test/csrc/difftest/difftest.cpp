@@ -140,23 +140,44 @@ int Difftest::step() {
   // interrupt has the highest priority
   proxy->mpfcpy(dut_regs_ptr, DUT_TO_REF);
   if (dut.event.interrupt) {
-    dut.csr.this_pc = dut.event.exceptionPC;
-    do_interrupt();
+    int last = 0;
+    for (int i = 0; i < DIFFTEST_COMMIT_WIDTH && dut.commit[i].valid; i++) {
+      last = i;
+    }
+    for (int i = 0; i < last; i++) {
+      do_instr_commit(i);
+      
+      num_commit++;
+      if (dut.commit[i].fused) {
+        num_commit++;
+      }
+    }
     for (int i = 0; i < DIFFTEST_COMMIT_WIDTH && dut.commit[i].valid; i++) {
       dut.commit[i].valid = 0;
     }
+    dut.csr.this_pc = dut.event.exceptionPC;
+    do_interrupt();
   } else if(dut.event.exception) {
     // We ignored instrAddrMisaligned exception (0) for better debug interface
     // XiangShan should always support RVC, so instrAddrMisaligned will never happen
-    // TODO: update NEMU, for now, NEMU will update pc when exception happen
-    // BUG: 如果有多条指令commit并且最后一条exception,那么exception前的指令不会提交
-    dut.csr.this_pc = dut.event.exceptionPC;
-    do_exception();
+    int last = 0;
+    for (int i = 0; i < DIFFTEST_COMMIT_WIDTH && dut.commit[i].valid; i++) {
+      last = i;
+    }
+    for (int i = 0; i < last; i++) {
+      do_instr_commit(i);
+      
+      num_commit++;
+      if (dut.commit[i].fused) {
+        num_commit++;
+      }
+    }
     for (int i = 0; i < DIFFTEST_COMMIT_WIDTH && dut.commit[i].valid; i++) {
       dut.commit[i].valid = 0;
     }
+    dut.csr.this_pc = dut.event.exceptionPC;
+    do_exception();
   } else {
-    // TODO: is this else necessary?
     for (int i = 0; i < DIFFTEST_COMMIT_WIDTH && dut.commit[i].valid; i++) {
       do_instr_commit(i);
       dut.commit[i].valid = 0;
