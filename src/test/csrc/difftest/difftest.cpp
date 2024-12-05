@@ -138,7 +138,6 @@ int Difftest::step() {
 
   num_commit = 0; // reset num_commit this cycle to 0
   // interrupt has the highest priority
-  proxy->mpfcpy(dut_regs_ptr, DUT_TO_REF);
   if (dut.event.interrupt) {
     int last = 0;
     for (int i = 0; i < DIFFTEST_COMMIT_WIDTH && dut.commit[i].valid; i++) {
@@ -245,12 +244,18 @@ int Difftest::step() {
 
 void Difftest::do_interrupt() {
   state->record_abnormal_inst(dut.commit[0].pc, dut.commit[0].inst, RET_INT, dut.event.interrupt);
+  uint64_t mpf_ptr[4];
+  mpf_ptr[1] = dut.csr.mip;
+  proxy->mpfcpy(mpf_ptr, DUT_TO_REF);
   proxy->raise_intr(dut.event.interrupt | (1ULL << 63));
   progress = true;
 }
 
 void Difftest::do_exception() {
   state->record_abnormal_inst(dut.event.exceptionPC, dut.commit[0].inst, RET_EXC, dut.event.exception);
+  uint64_t mpf_ptr[2];
+  mpf_ptr[1] = dut.csr.mip;
+  proxy->mpfcpy(mpf_ptr, DUT_TO_REF);
   if (dut.event.exception == 12 || dut.event.exception == 13 || dut.event.exception == 15) {
     // printf("exception cause: %d\n", dut.event.exception);
     struct ExecutionGuide guide;
@@ -293,6 +298,11 @@ void Difftest::do_instr_commit(int i) {
     proxy->regcpy(ref_regs_ptr, DIFFTEST_TO_REF);
     return;
   }
+
+  uint64_t mpf_ptr[2];
+  mpf_ptr[0] = dut.commit[i].wdata;
+  mpf_ptr[1] = dut.csr.mip;
+  proxy->mpfcpy(mpf_ptr, DUT_TO_REF);
 
   // single step exec
   proxy->exec(1);

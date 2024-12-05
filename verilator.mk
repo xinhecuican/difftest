@@ -124,7 +124,7 @@ PGO_MAX_CYCLE ?= 2000000
 
 EMU := $(BUILD_DIR)/emu
 
-$(EMU_MK): $(SRC) | $(EMU_DEPS)
+$(EMU_MK): $(EMU_DEPS)
 	@mkdir -p $(@D)
 	@echo "\n[verilator] Generating C++ files..." >> $(TIMELOG)
 	@date -R | tee -a $(TIMELOG)
