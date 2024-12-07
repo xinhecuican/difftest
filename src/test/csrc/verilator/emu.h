@@ -95,6 +95,9 @@ private:
 #endif
   bool enable_waveform;
   bool force_dump_wave = false;
+  bool enable_track = false;
+  bool track_start = false;
+  uint32_t track_cycle = 0;
 #ifdef VM_SAVABLE
   VerilatedSaveMem snapshot_slot[2];
 #endif

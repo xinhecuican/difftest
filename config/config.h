@@ -50,7 +50,7 @@
 // -----------------------------------------------------------------------
 
 // max commit width
-#define DIFFTEST_COMMIT_WIDTH 6
+#define DIFFTEST_COMMIT_WIDTH 4
 
 // max store width
 //

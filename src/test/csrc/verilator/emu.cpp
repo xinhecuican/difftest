@@ -335,6 +335,7 @@ uint64_t Emulator::execute(uint64_t max_cycle, uint64_t max_instr) {
 
 #ifdef DEBUG_REFILL
   difftest[0]->save_track_instr(args.track_instr);
+  enable_track = args.track_instr != 0;
 #endif
 
   uint32_t lasttime_poll = 0;
@@ -422,6 +423,30 @@ uint64_t Emulator::execute(uint64_t max_cycle, uint64_t max_instr) {
     if (args.enable_diff) {
       trapCode = difftest_state();
       if (trapCode != STATE_RUNNING) break;
+#ifdef DEBUG_REFILL
+        if (enable_track && !args.enable_fork) {
+          for (int i = 0; i < NUM_CORES; i++) {
+            for (int j = 0; j < DIFFTEST_COMMIT_WIDTH; j++) {
+              auto commit = difftest[i]->get_instr_commit(j);
+              if (!commit->valid) break;
+              if (commit->pc == args.track_instr) {
+                track_start = true;
+                enable_track = false;
+                break;
+              }
+            }
+          }
+        }
+        if (track_start) {
+          ++track_cycle;
+          if (track_cycle >= args.wave_begin) {
+            track_start = false;
+          }
+          auto trap = difftest[0]->get_trap_event();
+          uint64_t cycle = trap->cycleCnt;
+          tfp->dump(cycle);
+        }
+#endif
       if (difftest_step()) {
         trapCode = STATE_ABORT;
         break;
