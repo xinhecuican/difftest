@@ -294,7 +294,7 @@ inline void Emulator::single_cycle() {
     uint64_t cycle = trap->cycleCnt;
     uint64_t begin = args.wave_begin;
     uint64_t end   = args.wave_end;
-    bool in_range  = (begin <= cycle) && (cycle <= end);
+    bool in_range  = (begin <= cycle) && (cycle < end);
     if (in_range || force_dump_wave) { tfp->dump(cycle); }
   }
 #endif
@@ -424,6 +424,7 @@ uint64_t Emulator::execute(uint64_t max_cycle, uint64_t max_instr) {
       trapCode = difftest_state();
       if (trapCode != STATE_RUNNING) break;
 #ifdef DEBUG_REFILL
+#ifdef EMU_TRACE
         if (enable_track && !args.enable_fork) {
           for (int i = 0; i < NUM_CORES; i++) {
             for (int j = 0; j < DIFFTEST_COMMIT_WIDTH; j++) {
@@ -446,6 +447,7 @@ uint64_t Emulator::execute(uint64_t max_cycle, uint64_t max_instr) {
           uint64_t cycle = trap->cycleCnt;
           tfp->dump(cycle);
         }
+#endif
 #endif
       if (difftest_step()) {
         trapCode = STATE_ABORT;

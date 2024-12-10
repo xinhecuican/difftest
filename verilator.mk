@@ -98,6 +98,8 @@ OPT_FAST ?= -O3
 # --trace
 VERILATOR_FLAGS =                   \
   --top-module $(EMU_TOP)           \
+  --compiler clang 					\
+  --no-timing 						\
   +define+VERILATOR=1               \
   +define+PRINTF_COND=1             \
   +define+RANDOMIZE_REG_INIT        \
@@ -181,7 +183,6 @@ else
 	@echo "Building emu..."
 	$(MAKE) build_emu_local OPT_FAST=$(OPT_FAST)
 endif
-	@sync -d $(BUILD_DIR) -d $(EMU_DIR)
 else
 	ssh -tt $(REMOTE) 'export NOOP_HOME=$(NOOP_HOME); export NEMU_HOME=$(NEMU_HOME); $(MAKE) -C $(NOOP_HOME)/difftest -j230 build_emu_local'
 endif
