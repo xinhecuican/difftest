@@ -151,15 +151,7 @@ inline EmuArgs parse_args(int argc, const char *argv[]) {
       case 'T':
         args.track_instr = std::strtoll(optarg, NULL, 0);
         if (args.track_instr != 0) {
-        printf("Tracking addr 0x%lx\n", args.track_instr);
-        printf("Tracking addr 0x%lx\n", args.track_instr);
-        if(args.track_instr == 0) {
-          printf("Invalid track addr\n");
-          exit(1);
           printf("Tracking addr 0x%lx\n", args.track_instr);
-        if(args.track_instr == 0) {
-          printf("Invalid track addr\n");
-          exit(1);
         }
         // if(args.track_instr == 0) {
         //   printf("Invalid track addr\n");
