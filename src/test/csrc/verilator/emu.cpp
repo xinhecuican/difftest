@@ -150,11 +150,21 @@ inline EmuArgs parse_args(int argc, const char *argv[]) {
 #ifdef DEBUG_REFILL
       case 'T':
         args.track_instr = std::strtoll(optarg, NULL, 0);
+        if (args.track_instr != 0) {
+        printf("Tracking addr 0x%lx\n", args.track_instr);
         printf("Tracking addr 0x%lx\n", args.track_instr);
         if(args.track_instr == 0) {
           printf("Invalid track addr\n");
           exit(1);
+          printf("Tracking addr 0x%lx\n", args.track_instr);
+        if(args.track_instr == 0) {
+          printf("Invalid track addr\n");
+          exit(1);
         }
+        // if(args.track_instr == 0) {
+        //   printf("Invalid track addr\n");
+        //   exit(1);
+        // }
         break;
 #endif
       case 'W': args.warmup_instr = atoll(optarg);  break;
@@ -334,7 +344,9 @@ uint64_t Emulator::execute(uint64_t max_cycle, uint64_t max_instr) {
   }
 
 #ifdef DEBUG_REFILL
-  difftest[0]->save_track_instr(args.track_instr);
+  if (args.track_instr != 0) {
+    difftest[0]->save_track_instr(args.track_instr);
+  }
   enable_track = args.track_instr != 0;
 #endif
 

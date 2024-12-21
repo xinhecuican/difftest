@@ -261,10 +261,13 @@ void axi_read_data(const axi_ar_channel &ar, dramsim3_meta *meta) {
   // axi burst INCR
   else if (ar.burst == 1) {
     assert(transaction_size / sizeof(uint64_t) <= MAX_AXI_DATA_LEN);
-    for (int i = 0; i < transaction_size / sizeof(uint64_t); i++) {
-      meta->data[i] = ram[address / sizeof(uint64_t)];
-      address += sizeof(uint64_t);
-    }
+    uint8_t* ram_int = reinterpret_cast<uint8_t*>(ram);
+    void *start_addr = ram_int + address;
+    memcpy(meta->data, start_addr, transaction_size);
+    // for (int i = 0; i < transaction_size / sizeof(uint64_t); i++) {
+    //   meta->data[i] = ram[address / sizeof(uint64_t)];
+    //   address += sizeof(uint64_t);
+    // }
   }
   // axi burst WRAP
   else if (ar.burst == 2) {
