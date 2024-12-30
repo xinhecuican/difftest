@@ -32,6 +32,7 @@
 #endif
 #include <sys/types.h>
 #include <stdlib.h>
+#include <fstream>
 #include <unistd.h>
 #ifdef EMU_THREAD
 #include <verilated_threads.h>
@@ -98,6 +99,7 @@ private:
   bool enable_track = false;
   bool track_start = false;
   uint32_t track_cycle = 0;
+  std::vector<std::unique_ptr<std::fstream>> log_file;
 #ifdef VM_SAVABLE
   VerilatedSaveMem snapshot_slot[2];
 #endif
@@ -127,6 +129,7 @@ private:
   inline char* coverage_filename(time_t t);
   void snapshot_save(const char *filename);
   void snapshot_load(const char *filename);
+  void dump_log(int id, const std::string& filename, bool end=false);
   inline char* waveform_filename(time_t t);
   inline char* cycle_wavefile(uint64_t cycles, time_t t);
 #if VM_COVERAGE == 1

@@ -25,6 +25,7 @@
 #include "runahead.h"
 #include <getopt.h>
 #include <signal.h>
+#include <fstream>
 #ifdef  DEBUG_TILELINK
 #include "tllogger.h"
 #endif
@@ -107,7 +108,7 @@ inline EmuArgs parse_args(int argc, const char *argv[]) {
 
   int o;
   while ( (o = getopt_long(argc, const_cast<char *const*>(argv),
-          "-s:C:I:T:W:hi:m:b:e:B:E:l:", long_options, &long_index)) != -1) {
+          "-s:C:I:T:W:hi:m:b:e:B:E:l:D:", long_options, &long_index)) != -1) {
     switch (o) {
       case 0:
         switch (long_index) {
@@ -412,9 +413,14 @@ uint64_t Emulator::execute(uint64_t max_cycle, uint64_t max_instr) {
         dut_ptr->io_perfInfo_dump = 1;
         args.warmup_instr = -1;
       }
+      if (trap->cycleCnt % args.stat_cycles == args.stat_cycles - 2) {
+        difftest[i]->setEnabelLog(true);
+      }
       if (trap->cycleCnt % args.stat_cycles == args.stat_cycles - 1) {
         dut_ptr->io_perfInfo_clean = 1;
         dut_ptr->io_perfInfo_dump = 1;
+        dump_log(i, args.log_path);
+        difftest[i]->setEnabelLog(false);
       }
     }
 
@@ -517,7 +523,9 @@ uint64_t Emulator::execute(uint64_t max_cycle, uint64_t max_instr) {
     dut_ptr->eval();
     dut_ptr->clock = 1;
     dut_ptr->eval();
-    difftest_log(args.log_path);
+    for(int i=0; i<NUM_CORES; i++){
+      dump_log(i, args.log_path, true);
+    }
   }
 
   if (args.enable_fork && !is_fork_child()) {
@@ -789,4 +797,25 @@ void Emulator::fork_child_init() {
   //   difftest[i]->proxy->update_config(&nemu_config);
   // }
 #endif
+}
+
+void Emulator::dump_log(int id, const std::string& filename, bool end) {
+  bool init = log_file.size() == 0;
+  if (init) {
+    for (int i = 0; i < NUM_CORES; i++) {
+      std::string filePath = filename + "perf_" + std::to_string(i) + ".log";
+      log_file.push_back(std::make_unique<std::fstream>(filePath.c_str(), std::ios::out | std::ios::trunc));
+    }
+  }
+  auto log_state = difftest[id]->get_dut()->log_state;
+  if (log_file[id]->is_open()) {
+    for (auto iter = log_state.begin(); iter != log_state.end(); iter++) {
+          *log_file[id] << iter->first << ": " << iter->second << std::endl;
+    }
+    *log_file[id] << std::endl;
+  }
+
+  if (end) {
+    log_file[id]->close();
+  }
 }

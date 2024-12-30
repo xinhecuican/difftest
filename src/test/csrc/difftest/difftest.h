@@ -370,7 +370,6 @@ protected:
 extern Difftest **difftest;
 int difftest_init();
 int difftest_step();
-void difftest_log(std::string path);
 int difftest_state();
 int init_nemuproxy();
 

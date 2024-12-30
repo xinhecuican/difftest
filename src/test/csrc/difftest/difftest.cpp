@@ -81,21 +81,6 @@ int difftest_step() {
   return 0;
 }
 
-void difftest_log(std::string path) {
-  for(int i = 0; i < NUM_CORES; i++) {
-    std::fstream file;
-    std::string filePath = path + "perf_" + std::to_string(i) + ".log";
-    file.open(filePath.c_str(), std::ios::out | std::ios::trunc);
-    if (file.is_open()) {
-      auto log_state = difftest[i]->get_dut()->log_state;
-      for (auto iter = log_state.begin(); iter != log_state.end(); iter++) {
-        file << iter->first << ": " << iter->second << std::endl;
-      }
-    }
-    file.close();
-  }
-}
-
 Difftest::Difftest(int coreid) : id(coreid) {
   state = new DiffState();
   clear_step();
