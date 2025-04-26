@@ -55,7 +55,8 @@ DIFFTEST_CXXFILES = $(shell find $(DIFFTEST_CSRC_DIR) -name "*.cpp")
 PLUGIN_CHEAD_DIR = $(abspath ./src/test/csrc/plugin/include)
 
 SIM_VSRC = $(shell find ./src/test/vsrc/common -name "*.v" -or -name "*.sv")
-SRC = $(shell find $(DESIGN_DIR)/src -name "*.v" -or -name "*.sv" -or -name "*.svh")
+SRC = $(DESIGN_DIR)/scripts/config.vlt
+SRC += $(shell find $(DESIGN_DIR)/src -name "*.v" -or -name "*.sv" -or -name "*.svh")
 SRC += ${BUILD_DIR}/predefine.svh ${BUILD_DIR}/postdefine.svh
 
 SUBDIRS := $(shell find $(DESIGN_DIR)/src -type d)

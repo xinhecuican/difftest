@@ -230,7 +230,9 @@ int Difftest::step() {
 void Difftest::do_interrupt() {
   state->record_abnormal_inst(dut.commit[0].pc, dut.commit[0].inst, RET_INT, dut.event.interrupt);
   uint64_t mpf_ptr[4];
+  mpf_ptr[0] = dut.trap.cycleCnt;
   mpf_ptr[1] = dut.csr.mip;
+  mpf_ptr[2] = dut.trap.cycleCnt;
   proxy->mpfcpy(mpf_ptr, DUT_TO_REF);
   proxy->raise_intr(dut.event.interrupt | (1ULL << 63));
   progress = true;
@@ -238,8 +240,10 @@ void Difftest::do_interrupt() {
 
 void Difftest::do_exception() {
   state->record_abnormal_inst(dut.event.exceptionPC, dut.commit[0].inst, RET_EXC, dut.event.exception);
-  uint64_t mpf_ptr[2];
+  uint64_t mpf_ptr[3];
+  mpf_ptr[0] = dut.trap.cycleCnt;
   mpf_ptr[1] = dut.csr.mip;
+  mpf_ptr[2] = dut.trap.cycleCnt;
   proxy->mpfcpy(mpf_ptr, DUT_TO_REF);
   if (dut.event.exception == 12 || dut.event.exception == 13 || dut.event.exception == 15) {
     // printf("exception cause: %d\n", dut.event.exception);
@@ -284,9 +288,10 @@ void Difftest::do_instr_commit(int i) {
     return;
   }
 
-  uint64_t mpf_ptr[2];
+  uint64_t mpf_ptr[3];
   mpf_ptr[0] = dut.commit[i].wdata;
   mpf_ptr[1] = dut.csr.mip;
+  mpf_ptr[2] = dut.trap.cycleCnt;
   proxy->mpfcpy(mpf_ptr, DUT_TO_REF);
 
   // single step exec

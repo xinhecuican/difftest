@@ -603,8 +603,7 @@ inline char* Emulator::cycle_wavefile(uint64_t cycles, time_t t) {
 #if VM_COVERAGE == 1
 inline char* Emulator::coverage_filename(time_t t) {
   static char buf[1024];
-  char *p = timestamp_filename(t, buf);
-  strcpy(p, ".coverage.dat");
+  snprintf(buf, 1024, "%s%s", args.log_path.c_str(), "annotated.dat");
   return buf;
 }
 

@@ -204,10 +204,11 @@ ifneq ($(REMOTE),localhost)
 endif
 	$(EMU) -i $(IMAGE) --diff=$(REF_SO) $(EMU_FLAGS)
 
+LOG_ANNO_DIR = $(DESIGN_DIR)/build/annotated
 coverage:
-	verilator_coverage --annotate build/logs/annotated --annotate-min 1 build/logs/coverage.dat
-	python3 scripts/coverage/coverage.py build/logs/annotated/XSSimTop.v build/XSSimTop_annotated.v
-	python3 scripts/coverage/statistics.py build/XSSimTop_annotated.v >build/coverage.log
+	verilator_coverage --annotate $(LOG_ANNO_DIR) --annotate-min 1 --write-info $(LOG_ANNO_DIR)/annotate.info $(DESIGN_DIR)/log/annotated.dat
+	mkdir -p $(DESIGN_DIR)/log/annotate
+	genhtml $(LOG_ANNO_DIR)/annotate.info -output-directory $(DESIGN_DIR)/log/annotate
 
 clean_obj:
 	rm -f $(EMU_DIR)/*.o $(EMU_DIR)/*.gch $(EMU_DIR)/*.a $(EMU_DIR)/*.d $(EMU)
