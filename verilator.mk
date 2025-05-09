@@ -21,7 +21,8 @@ EMU_TOP      = SimTop
 EMU_CSRC_DIR = $(abspath ./src/test/csrc)
 EMU_CXXFILES = $(shell find $(EMU_CSRC_DIR) -name "*.cpp") $(SIM_CXXFILES) $(DIFFTEST_CXXFILES) $(PLUGIN_CXXFILES)
 EMU_CXXFLAGS += -std=c++17 -static -Wall -I$(EMU_CSRC_DIR) -I$(SIM_CSRC_DIR) -I$(DIFFTEST_CSRC_DIR) -I$(PLUGIN_CHEAD_DIR)
-EMU_CXXFLAGS += -DVERILATOR -DNUM_CORES=$(NUM_CORES) -DRV32
+# -DRV32
+EMU_CXXFLAGS += -DVERILATOR -DNUM_CORES=$(NUM_CORES)
 EMU_CXXFLAGS += $(shell sdl2-config --cflags) -fPIE
 EMU_LDFLAGS  += -lpthread -lSDL2 -ldl -lz -lsqlite3
 
@@ -79,7 +80,7 @@ endif
 # Verilator coverage
 EMU_COVERAGE ?=
 ifeq ($(EMU_COVERAGE),1)
-VEXTRA_FLAGS += --coverage-line --coverage-toggle
+VEXTRA_FLAGS += --coverage
 endif
 
 # co-simulation with DRAMsim3
