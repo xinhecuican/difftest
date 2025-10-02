@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <fstream>
 #include <unistd.h>
+#include <thread>
 #ifdef EMU_THREAD
 #include <verilated_threads.h>
 #endif
@@ -105,7 +106,6 @@ private:
 #endif
   EmuArgs args;
   LightSSS lightsss;
-
   enum {
     STATE_GOODTRAP = 0,
     STATE_BADTRAP = 1,

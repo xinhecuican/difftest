@@ -21,6 +21,7 @@
 #include <map>
 #include <string>
 #include "nemuproxy.h"
+#include "uart8250.hpp"
 #define DIFF_PROXY NemuProxy
 
 #define DIFFTEST_CORE_NUMBER  NUM_CORES
@@ -252,6 +253,7 @@ public:
   DIFF_PROXY *proxy = NULL;
   uint32_t num_commit = 0; // # of commits if made progress
   bool has_commit = false;
+  uart8250* uart;
   // Trigger a difftest checking procdure
   virtual int step();
   void update_nemuproxy(int);

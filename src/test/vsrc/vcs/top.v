@@ -27,11 +27,14 @@ reg  [63:0] io_logCtrl_log_end;
 wire [63:0] io_logCtrl_log_level;
 wire        io_perfInfo_clean;
 wire        io_perfInfo_dump;
-wire        io_uart_out_valid;
-wire [ 7:0] io_uart_out_ch;
-wire        io_uart_in_valid;
-wire [ 7:0] io_uart_in_ch;
-
+wire [63:0] uart_paddr;
+wire        uart_psel;
+wire        uart_penable;
+wire        uart_pwrite;
+wire [31:0] uart_pwdata;
+wire [3:0]  uart_pstrb;
+wire [31:0] uart_prdata;
+wire        uart_irq;
 string bin_file;
 initial begin
   clock = 0;
@@ -73,16 +76,19 @@ SimTop sim(
   .io_logCtrl_log_level(io_logCtrl_log_level),
   .io_perfInfo_clean(io_perfInfo_clean),
   .io_perfInfo_dump(io_perfInfo_dump),
-  .io_uart_out_valid(io_uart_out_valid),
-  .io_uart_out_ch(io_uart_out_ch),
-  .io_uart_in_valid(io_uart_in_valid),
-  .io_uart_in_ch(io_uart_in_ch)
+  .uart_paddr(uart_paddr),
+  .uart_psel(uart_psel),
+  .uart_penable(uart_penable),
+  .uart_pwrite(uart_pwrite),
+  .uart_pwdata(uart_pwdata),
+  .uart_pstrb(uart_pstrb),
+  .uart_prdata(uart_prdata),
+  .uart_irq(uart_irq)
 );
 
 assign io_logCtrl_log_level = 0;
 assign io_perfInfo_clean = 0;
 assign io_perfInfo_dump = 0;
-assign io_uart_in_ch = 8'hff;
 
 always @(posedge clock) begin
   if (!reset && io_uart_out_valid) begin

@@ -293,6 +293,11 @@ void Difftest::do_instr_commit(int i) {
   mpf_ptr[1] = dut.csr.mip;
   mpf_ptr[2] = dut.trap.cycleCnt;
   proxy->mpfcpy(mpf_ptr, DUT_TO_REF);
+  if (dut.load[i].valid & dut.load[i].paddr >= 0x10000000 && dut.load[i].paddr < 0x10001000) {
+    uint64_t buf;
+    uart->do_read(dut.load[i].paddr & 0x7, 1, (char*)&buf, true);
+    proxy->memcpy(dut.load[i].paddr, &buf, 1, DUT_TO_DIFFTEST);
+  }
 
   // single step exec
   proxy->exec(1);

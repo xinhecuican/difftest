@@ -36,6 +36,7 @@ void pmem_write(uint64_t waddr, uint64_t wdata);
 
 #ifdef WITH_DRAMSIM3
 #include "axi4.h"
+#include "uart8250.hpp"
 
 void dramsim3_finish();
 void dramsim3_helper_rising(const struct axi_channel &axi);

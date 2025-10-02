@@ -57,7 +57,7 @@ PLUGIN_CHEAD_DIR = $(abspath ./src/test/csrc/plugin/include)
 SIM_VSRC = $(shell find ./src/test/vsrc/common -name "*.v" -or -name "*.sv")
 SRC = $(DESIGN_DIR)/scripts/config.vlt
 SRC += $(shell find $(DESIGN_DIR)/src -name "*.v" -or -name "*.sv" -or -name "*.svh")
-SRC += ${BUILD_DIR}/predefine.svh ${BUILD_DIR}/postdefine.svh
+SRC += ${BUILD_DIR}/predef/predefine.svh ${BUILD_DIR}/predef/postdefine.svh
 
 SUBDIRS := $(shell find $(DESIGN_DIR)/src -type d)
 INCLUDES := $(addprefix -I, $(SUBDIRS))

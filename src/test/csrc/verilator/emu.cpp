@@ -34,9 +34,28 @@
 #include "compress.h"
 #include "lightsss.h"
 #include "remote_bitbang.h"
+#include <termios.h>
 
 extern remote_bitbang_t * jtag;
+uart8250* uart;
+std::thread *uart_input_thread;
 
+void uart_input(uart8250* uart, Difftest* diff, Emulator* emu) {\
+    termios tmp;
+    tcgetattr(STDIN_FILENO,&tmp);
+    tmp.c_lflag &=(~ICANON & ~ECHO);
+    tcsetattr(STDIN_FILENO,TCSANOW,&tmp);
+    while (emu->get_trapcode() == -1) {
+        char c = getchar();
+        if (c == 9) {
+          auto trap = diff->get_trap_event();
+          uint64_t pc = trap->pc;
+          printf("pc = %lx\n",pc); // ctrl+i
+        }
+        else if (c == 10) c = 13; // convert lf to cr
+        uart->putc(c);
+    }
+}
 
 static inline void print_help(const char *file) {
   printf("Usage: %s [OPTION...]\n", file);
@@ -187,6 +206,7 @@ Emulator::Emulator(int argc, const char *argv[]):
   cycles(0), trapCode(STATE_RUNNING)
 {
   args = parse_args(argc, argv);
+  uart = new uart8250();
 
   // srand
   srand(args.seed);
@@ -250,7 +270,7 @@ Emulator::Emulator(int argc, const char *argv[]):
 Emulator::~Emulator() {
   ram_finish();
   assert_finish();
-
+  pthread_kill(uart_input_thread->native_handle(),SIGKILL);
 #ifdef VM_SAVABLE
   if (args.enable_snapshot && trapCode != STATE_GOODTRAP && trapCode != STATE_LIMIT_EXCEEDED) {
     printf("Saving snapshots to file system. Please wait.\n");
@@ -313,13 +333,20 @@ inline void Emulator::single_cycle() {
   axi_set_dut_ptr(dut_ptr, axi);
 #endif
 
-  if (dut_ptr->io_uart_out_valid) {
-    printf("%c", dut_ptr->io_uart_out_ch);
+  apb_channel apb;
+  apb.paddr = dut_ptr->uart_paddr;
+  apb.psel = dut_ptr->uart_psel;
+  apb.penable = dut_ptr->uart_penable;
+  apb.pwrite = dut_ptr->uart_pwrite;
+  apb.pwdata = dut_ptr->uart_pwdata;
+  apb.pstrb = dut_ptr->uart_pstrb;
+  uart->handle_apb(apb);
+  dut_ptr->uart_prdata = apb.prdata;
+  dut_ptr->uart_irq = uart->irq();
+  while(uart->exist_tx()) {
+    char c = uart->getc();
+    printf("%c", c);
     fflush(stdout);
-  }
-  if (dut_ptr->io_uart_in_valid) {
-    extern uint8_t uart_getc();
-    dut_ptr->io_uart_in_ch = uart_getc();
   }
   cycles ++;
 }
@@ -327,6 +354,8 @@ inline void Emulator::single_cycle() {
 uint64_t Emulator::execute(uint64_t max_cycle, uint64_t max_instr) {
 
   difftest_init();
+  uart_input_thread = new std::thread(uart_input, uart, difftest[0], this);
+  difftest[0]->uart = uart;
   init_device();
   if (args.enable_diff) {
     init_goldenmem();
