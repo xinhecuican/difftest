@@ -61,6 +61,7 @@ SRC += ${BUILD_DIR}/predef/predefine.svh ${BUILD_DIR}/predef/postdefine.svh
 
 SUBDIRS := $(shell find $(DESIGN_DIR)/src -type d)
 INCLUDES := $(addprefix -I, $(SUBDIRS))
+INCLUDES += -I$(BUILD_DIR)/predef
 INCLUDE_DIRS = $(INCLUDES)
 include verilator.mk
 include vcs.mk
